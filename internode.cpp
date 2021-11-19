@@ -24,10 +24,6 @@
 #include <vector>
 #include <thread>
 
-#define SOURCE_NODE 0
-#define DEST_NODE 1
-#define THREAD_COUNT 1
-
 #define PAGE_4K (4UL*1024)
 #define PAGE_2M (PAGE_4K*512)
 
@@ -37,14 +33,16 @@ void copy(volatile unsigned long* src, volatile unsigned long* dst, size_t byteC
 }
 
 int main(int argc, char *argv[]){
-    if(argc!=3){
-        printf("Usage: ./main page_count thread_count\n");
+    if(argc!=5){
+        printf("Usage: ./main page_count thread_count source_node dest_node\n");
         exit(0);
     }
 
     int page_size = PAGE_4K;
     int page_count = atoi(argv[1]);
     int thread_count = atoi(argv[2]);
+    int source_node = atoi(argv[3]);
+    int dest_node = atoi(argv[4]);
 
     int nr_nodes;
     struct bitmask *old_nodes;
@@ -53,8 +51,8 @@ int main(int argc, char *argv[]){
     nr_nodes = numa_max_node()+1;
     old_nodes = numa_bitmask_alloc(nr_nodes);
     new_nodes = numa_bitmask_alloc(nr_nodes);
-    numa_bitmask_setbit(old_nodes, SOURCE_NODE);
-    numa_bitmask_setbit(new_nodes, DEST_NODE);
+    numa_bitmask_setbit(old_nodes, source_node);
+    numa_bitmask_setbit(new_nodes, dest_node);
 
     if (nr_nodes < 2) {
             printf("A minimum of 2 nodes is required for this test.\n");
@@ -89,10 +87,10 @@ int main(int argc, char *argv[]){
 
     for (int i = 0; i < page_count; i++) {
         local_addr[i] = local_page + i * page_size;
-        local_nodes[i] = SOURCE_NODE;
+        local_nodes[i] = source_node;
         local_status[i] = -123;
         remote_addr[i] = remote_page + i * page_size;
-        remote_nodes[i] = DEST_NODE;
+        remote_nodes[i] = dest_node;
         remote_status[i] = -123;
     }
 
